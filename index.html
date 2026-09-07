@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小小減碳偵探：生活減碳計算機</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background-color: #f2f7f4;
+      color: #2d3748;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(45, 106, 79, 0.08);
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 22px;
+      color: #2d6a4f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #52796f;
+      margin-top: 4px;
+    }
+    .input-card {
+      background: #f8faf9;
+      border: 1.5px solid #d8f3dc;
+      padding: 16px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    select, input {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      outline: none;
+    }
+    select:focus, input:focus {
+      border-color: #40916c;
+    }
+    .btn-add {
+      width: 100%;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: #2d6a4f;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .btn-add:hover {
+      background-color: #1b4332;
+    }
+
+    /* 總計看板 */
+    .dashboard {
+      background: #eef7ee;
+      border: 1.5px solid #b7e4c7;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      text-align: center;
+    }
+    .card-stat.full-width {
+      grid-column: span 2;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed #b7e4c7;
+    }
+    .stat-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #40916c;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: #1b4332;
+    }
+    .unit {
+      font-size: 12px;
+      font-weight: normal;
+      color: #52796f;
+    }
+
+    /* 紀錄清單 */
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+    .list-header h3 {
+      font-size: 15px;
+      color: #374151;
+    }
+    .btn-clear {
+      background: none;
+      border: none;
+      color: #dc2626;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .record-list {
+      list-style: none;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .record-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #fdfdfd;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .record-name {
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .record-carbon {
+      color: #2d6a4f;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .btn-del {
+      background: #fee2e2;
+      border: none;
+      color: #dc2626;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .empty-tip {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      padding: 18px 0;
+    }
+
+    /* AI倫理與教育宣告頁尾 */
+    footer {
+      margin-top: 24px;
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>🌱 小小減碳偵探計算機</h1>
+      <div class="subtitle">算算看，你的日常行動幫地球減了多少負擔！</div>
+    </header>
+
+    <!-- 輸入區塊 -->
+    <div class="input-card">
+      <div class="form-group">
+        <label for="activity">選擇生活行動：</label>
+        <select id="activity" onchange="updateUnit()">
+          <option value="0.06" data-name="自備環保提袋" data-unit="次">自備環保提袋 (每次 -0.06 kg)</option>
+          <option value="0.06" data-name="自備環保杯" data-unit="次">自備環保杯 (每次 -0.06 kg)</option>
+          <option value="0.02" data-name="拒用免洗筷" data-unit="雙">拒用免洗筷 (每雙 -0.02 kg)</option>
+          <option value="1.20" data-name="吃蔬食取代肉食" data-unit="餐">吃蔬食取代肉食 (每餐 -1.20 kg)</option>
+          <option value="0.25" data-name="大眾運輸/步行取代開車" data-unit="公里">步行或大眾運輸取代開車 (每公里 -0.25 kg)</option>
+          <option value="0.45" data-name="少吹一小時冷氣" data-unit="小時">隨手關冷氣一小時 (每小時 -0.45 kg)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="amount">行動次數 / 數量（單位：<span id="unit-label">次</span>）：</label>
+        <input type="number" id="amount" placeholder="請輸入整數，例如：3" min="1" step="1">
+      </div>
+
+      <button type="button" class="btn-add" onclick="addRecord()">＋ 加入減碳清單</button>
+    </div>
+
+    <!-- 總累計效益面板 -->
+    <div class="dashboard">
+      <div class="card-stat full-width">
+        <div class="stat-title">總累計減少碳排放</div>
+        <div class="stat-value"><span id="total-carbon">0.00</span> <span class="unit">kg CO₂e</span></div>
+      </div>
+      <div class="card-stat">
+        <div class="stat-title">相當於種植大樹</div>
+        <div class="stat-value">🌳 <span id="total-trees">0.00</span></div>
+        <div class="unit">棵成樹吸收一年</div>
+      </div>
+      <div class="card-stat">
+        <div class="stat-title">爭取地球喘息時間</div>
+        <div class="stat-value">⏳ <span id="total-time">0 分鐘</span></div>
+        <div class="unit">個人日常碳排抵消</div>
+      </div>
+    </div>
+
+    <!-- 紀錄清單 -->
+    <div class="list-header">
+      <h3>今日行動紀錄</h3>
+      <button class="btn-clear" onclick="clearAllRecords()">清空紀錄</button>
+    </div>
+    <ul class="record-list" id="record-list">
+      <li class="empty-tip" id="empty-tip">尚未加入紀錄，快選擇上方的行動開始吧！</li>
+    </ul>
+  </div>
+
+  <footer>
+    <p>🤖 本網頁程式由師生團隊與 AI 協同生成，專供課堂探索與環境教育使用。</p>
+    <p>🔒 所有運算皆在學生裝置端即時處理，本站絕不收集任何個人隱私資訊。</p>
+  </footer>
+
+  <script>
+    let records = [];
+
+    function updateUnit() {
+      const select = document.getElementById('activity');
+      const unit = select.options[select.selectedIndex].getAttribute('data-unit');
+      document.getElementById('unit-label').textContent = unit;
+    }
+
+    function addRecord() {
+      const select = document.getElementById('activity');
+      const factor = parseFloat(select.value);
+      const name = select.options[select.selectedIndex].getAttribute('data-name');
+      const unit = select.options[select.selectedIndex].getAttribute('data-unit');
+      const amountInput = document.getElementById('amount');
+      const amount = parseFloat(amountInput.value);
+
+      if (isNaN(amount) || amount <= 0) {
+        alert('請輸入大於 0 的有效數字！');
+        return;
+      }
+
+      const carbon = factor * amount;
+
+      records.push({
+        id: Date.now(),
+        name: name,
+        amount: amount,
+        unit: unit,
+        carbon: carbon
+      });
+
+      amountInput.value = '';
+      render();
+    }
+
+    function removeRecord(id) {
+      records = records.filter(item => item.id !== id);
+      render();
+    }
+
+    function clearAllRecords() {
+      if (records.length === 0) return;
+      if (confirm('確定要清空所有紀錄嗎？')) {
+        records = [];
+        render();
+      }
+    }
+
+    function render() {
+      const listEl = document.getElementById('record-list');
+      listEl.innerHTML = '';
+
+      if (records.length === 0) {
+        listEl.innerHTML = '<li class="empty-tip">尚未加入紀錄，快選擇上方的行動開始吧！</li>';
+      } else {
+        records.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'record-item';
+          li.innerHTML = `
+            <div>
+              <span class="record-name">${item.name}</span>
+              <span style="color:#64748b; font-size:12px;">× ${item.amount} ${item.unit}</span>
+            </div>
+            <div>
+              <span class="record-carbon">-${item.carbon.toFixed(2)} kg</span>
+              <button class="btn-del" onclick="removeRecord(${item.id})">刪除</button>
+            </div>
+          `;
+          listEl.appendChild(li);
+        });
+      }
+
+      const totalCarbon = records.reduce((sum, item) => sum + item.carbon, 0);
+
+      // 成樹年吸碳量約 12 公斤
+      const trees = (totalCarbon / 12).toFixed(2);
+
+      // 台灣個人每日生活碳排約 16.5 公斤估算
+      const hoursSaved = (totalCarbon / (16.5 / 24));
+      let timeText = "0 分鐘";
+      if (hoursSaved >= 24) {
+        timeText = `${(hoursSaved / 24).toFixed(1)} 天`;
+      } else if (hoursSaved >= 1) {
+        timeText = `${hoursSaved.toFixed(1)} 小時`;
+      } else if (totalCarbon > 0) {
+        timeText = `${Math.round(hoursSaved * 60)} 分鐘`;
+      }
+
+      document.getElementById('total-carbon').textContent = totalCarbon.toFixed(2);
+      document.getElementById('total-trees').textContent = trees;
+      document.getElementById('total-time').textContent = timeText;
+    }
+  </script>
+</body>
+</html>
